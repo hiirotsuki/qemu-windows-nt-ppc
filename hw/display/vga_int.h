@@ -137,6 +137,7 @@ typedef struct VGACommonState {
     bool full_update_text;
     bool full_update_gfx;
     bool big_endian_fb;
+    bool partial_init;
     bool default_endian_fb;
     bool global_vmstate;
     /* hardware mouse cursor support */

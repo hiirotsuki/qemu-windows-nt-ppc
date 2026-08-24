@@ -1902,6 +1902,23 @@ void vga_common_reset(VGACommonState *s)
         memset(&s->retrace_info, 0, sizeof (s->retrace_info));
         break;
     }
+
+    if (s->partial_init) {
+        static const uint8_t ar_reset[VGA_ATT_C] = {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+            [VGA_ATC_MODE]         = 0x0c,
+            [VGA_ATC_OVERSCAN]     = 0x00,
+            [VGA_ATC_PLANE_ENABLE] = 0x0f,
+            [VGA_ATC_PEL]          = 0x08,
+            [VGA_ATC_COLOR_PAGE]   = 0x00,
+        };
+
+        s->msr |= VGA_MIS_COLOR;
+        memcpy(s->ar, ar_reset, sizeof(ar_reset));
+        s->ar_index |= 0x20;
+    }
+
     vga_update_memory_access(s);
 }
 

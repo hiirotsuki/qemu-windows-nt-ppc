@@ -68,6 +68,7 @@
 static void rtc_set_time(MC146818RtcState *s);
 static void rtc_update_time(MC146818RtcState *s);
 static void rtc_set_cmos(MC146818RtcState *s, const struct tm *tm);
+static void rtc_get_time(MC146818RtcState *s, struct tm *tm);
 static inline int rtc_from_bcd(MC146818RtcState *s, int a);
 static uint64_t get_next_alarm(MC146818RtcState *s);
 
@@ -498,6 +499,18 @@ static void cmos_ioport_write(void *opaque, hwaddr addr,
             update_periodic_timer = (s->cmos_data[RTC_REG_B] ^ data)
                                        & REG_B_PIE;
             old_period = rtc_periodic_clock_ticks(s);
+
+            if ((s->cmos_data[RTC_REG_B] ^ data) & (REG_B_DM | REG_B_24H)) {
+                struct tm tm;
+
+                if (rtc_running(s)) {
+                    rtc_update_time(s);
+                }
+                rtc_get_time(s, &tm);
+                s->cmos_data[RTC_REG_B] &= ~(REG_B_DM | REG_B_24H);
+                s->cmos_data[RTC_REG_B] |= data & (REG_B_DM | REG_B_24H);
+                rtc_set_cmos(s, &tm);
+            }
 
             if (data & REG_B_SET) {
                 /* update cmos to when the rtc was stopping */

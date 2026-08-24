@@ -165,6 +165,9 @@ static uint32_t hreg_compute_hflags_value(CPUPPCState *env)
     if (msr_is_64bit(env, msr)) {
         hflags |= 1 << HFLAGS_64;
     }
+    if (env->le_latch_present && !env->platform_le) {
+        hflags |= 1 << HFLAGS_DATA_BE;
+    }
     if ((ppc_flags & POWERPC_FLAG_SPE) && (msr & (1 << MSR_SPE))) {
         hflags |= 1 << HFLAGS_SPE;
     }
@@ -815,4 +818,13 @@ void register_usprgh_sprs(CPUPPCState *env)
                  &spr_read_ureg, SPR_NOACCESS,
                  &spr_read_ureg, SPR_NOACCESS,
                  0x00000000);
+}
+
+void ppc_set_platform_le(CPUPPCState *env, bool le)
+{
+    if (!env->le_latch_present || env->platform_le != le) {
+        env->le_latch_present = true;
+        env->platform_le = le;
+        hreg_compute_hflags(env);
+    }
 }
