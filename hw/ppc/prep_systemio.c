@@ -30,7 +30,6 @@
 #include "migration/vmstate.h"
 #include "system/address-spaces.h"
 #include "qom/object.h"
-#include "qemu/error-report.h" /* for error_report() */
 #include "qemu/module.h"
 #include "system/runstate.h"
 #include "target/ppc/cpu.h"
@@ -52,7 +51,6 @@ struct PrepSystemIoState {
     uint8_t system_control; /* 0x081c */
     uint8_t iomap_type; /* 0x0850 */
     uint8_t ibm_planar_id; /* 0x0852 */
-    qemu_irq softreset_irq;
     PortioList portio;
 };
 
@@ -66,18 +64,17 @@ enum {
 static void prep_port0092_write(void *opaque, uint32_t addr, uint32_t val)
 {
     PrepSystemIoState *s = opaque;
+    uint8_t oldval = s->sreset;
 
     trace_prep_systemio_write(addr, val);
 
-    s->sreset = val & PORT0092_SOFTRESET;
-    qemu_set_irq(s->softreset_irq, s->sreset);
+    s->sreset = val & (PORT0092_SOFTRESET | PORT0092_LE_MODE);
 
-    if ((val & PORT0092_LE_MODE) != 0) {
-        /* XXX Not supported yet */
-        error_report("little-endian mode not supported");
-        vm_stop(RUN_STATE_PAUSED);
-    } else {
-        /* Nothing to do */
+    ppc_set_platform_le(&POWERPC_CPU(first_cpu)->env,
+                        !!(s->sreset & PORT0092_LE_MODE));
+
+    if ((s->sreset & PORT0092_SOFTRESET) && !(oldval & PORT0092_SOFTRESET)) {
+        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
     }
 }
 
@@ -255,15 +252,11 @@ static void prep_systemio_realize(DeviceState *dev, Error **errp)
 {
     ISADevice *isa = ISA_DEVICE(dev);
     PrepSystemIoState *s = PREP_SYSTEMIO(dev);
-    PowerPCCPU *cpu;
 
     qdev_init_gpio_out(dev, &s->non_contiguous_io_map_irq, 1);
     s->iomap_type = PORT0850_IOMAP_NONCONTIGUOUS;
     qemu_set_irq(s->non_contiguous_io_map_irq,
                  s->iomap_type & PORT0850_IOMAP_NONCONTIGUOUS);
-    cpu = POWERPC_CPU(first_cpu);
-    s->softreset_irq = qdev_get_gpio_in(DEVICE(cpu), PPC6xx_INPUT_HRESET);
-
     isa_register_portio_list(isa, &s->portio, 0x0, ppc_io800_port_list, s,
                              "systemio800");
 

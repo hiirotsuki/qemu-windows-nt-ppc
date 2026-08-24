@@ -861,6 +861,7 @@ enum {
     HFLAGS_DR = 4,   /* MSR_DR */
     HFLAGS_HR = 5,   /* computed from SPR_LPCR[HR] */
     HFLAGS_SPE = 6,  /* from MSR_SPE if cpu has SPE; avoid overlap w/ MSR_VR */
+    HFLAGS_DATA_BE = 7, /* data path is big-endian despite MSR_LE */
     HFLAGS_TM = 8,   /* computed from MSR_TM */
     HFLAGS_BE = 9,   /* MSR_BE -- from elsewhere on embedded ppc */
     HFLAGS_SE = 10,  /* MSR_SE -- from elsewhere on embedded ppc */
@@ -1417,6 +1418,8 @@ struct CPUArchState {
      * special way (such as routing some resume causes to 0x100, i.e. sreset).
      */
     bool resume_as_sreset;
+    bool le_latch_present;
+    bool platform_le;
 
     /*
      * On powernv, quiesced means the CPU has been stopped using PC direct
@@ -1671,6 +1674,7 @@ void ppc_store_dawr1(CPUPPCState *env, target_ulong value);
 void ppc_store_dawrx1(CPUPPCState *env, uint32_t value);
 #endif /* !defined(CONFIG_USER_ONLY) */
 void ppc_store_msr(CPUPPCState *env, target_ulong value);
+void ppc_set_platform_le(CPUPPCState *env, bool le);
 
 /* Time-base and decrementer management */
 uint64_t cpu_ppc_load_tbl(CPUPPCState *env);
@@ -3071,6 +3075,8 @@ static inline bool ppc_interrupts_little_endian(PowerPCCPU *cpu, bool hv)
             ile = !!(env->spr[SPR_HID0] & HID0_HILE);
         }
 
+    } else if (env->platform_le) {
+        ile = true;
     } else if (pcc->lpcr_mask & LPCR_ILE) {
         ile = !!(env->spr[SPR_LPCR] & LPCR_ILE);
     } else {
