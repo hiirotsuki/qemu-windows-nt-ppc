@@ -593,8 +593,11 @@ static void rtc_get_time(MC146818RtcState *s, struct tm *tm)
     tm->tm_mday = rtc_from_bcd(s, s->cmos_data[RTC_DAY_OF_MONTH]);
     tm->tm_mon = rtc_from_bcd(s, s->cmos_data[RTC_MONTH]) - 1;
     tm->tm_year =
-        rtc_from_bcd(s, s->cmos_data[RTC_YEAR]) + s->base_year +
-        rtc_from_bcd(s, s->cmos_data[RTC_CENTURY]) * 100 - 1900;
+        rtc_from_bcd(s, s->cmos_data[RTC_YEAR]) + s->base_year - 1900;
+
+    if (tm->tm_year < 70) {
+        tm->tm_year += 100;
+    }
 }
 
 static void rtc_set_time(MC146818RtcState *s)
@@ -630,7 +633,6 @@ static void rtc_set_cmos(MC146818RtcState *s, const struct tm *tm)
     s->cmos_data[RTC_MONTH] = rtc_to_bcd(s, tm->tm_mon + 1);
     year = tm->tm_year + 1900 - s->base_year;
     s->cmos_data[RTC_YEAR] = rtc_to_bcd(s, year % 100);
-    s->cmos_data[RTC_CENTURY] = rtc_to_bcd(s, year / 100);
 }
 
 static void rtc_update_time(MC146818RtcState *s)
@@ -884,18 +886,6 @@ static void rtc_realizefn(DeviceState *dev, Error **errp)
     s->cmos_data[RTC_REG_B] = 0x02;
     s->cmos_data[RTC_REG_C] = 0x00;
     s->cmos_data[RTC_REG_D] = 0x80;
-
-    /* This is for historical reasons.  The default base year qdev property
-     * was set to 2000 for most machine types before the century byte was
-     * implemented.
-     *
-     * This if statement means that the century byte will be always 0
-     * (at least until 2079...) for base_year = 1980, but will be set
-     * correctly for base_year = 2000.
-     */
-    if (s->base_year == 2000) {
-        s->base_year = 0;
-    }
 
     if (s->isairq >= ISA_NUM_IRQS) {
         error_setg(errp, "Maximum value for \"irq\" is: %u", ISA_NUM_IRQS - 1);
