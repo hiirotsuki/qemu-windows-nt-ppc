@@ -337,7 +337,7 @@ static void ibm_40p_init(MachineState *machine)
     /* system control ports */
     isa_dev = isa_new("prep-systemio");
     dev = DEVICE(isa_dev);
-    qdev_prop_set_uint32(dev, "ibm-planar-id", 0xfc);
+    qdev_prop_set_uint32(dev, "ibm-planar-id", 0xfe);
     qdev_prop_set_uint32(dev, "equipment", 0xc0);
     isa_realize_and_unref(isa_dev, isa_bus, &error_fatal);
 
