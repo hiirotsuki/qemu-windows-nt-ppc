@@ -127,6 +127,10 @@ static unsigned int get_uart_irq(ISASuperIODevice *sio, uint8_t i)
 static bool is_uart_enabled(ISASuperIODevice *sio, uint8_t i)
 {
     PC87312State *s = PC87312(sio);
+
+    if (!s->uarts) {
+        return false;
+    }
     return s->regs[REG_FER] & (FER_UART1_EN << i);
 }
 
@@ -360,6 +364,7 @@ static const VMStateDescription vmstate_pc87312 = {
 static const Property pc87312_properties[] = {
     DEFINE_PROP_UINT16("iobase", PC87312State, iobase, 0x398),
     DEFINE_PROP_UINT8("config", PC87312State, config, 1),
+	DEFINE_PROP_BOOL("uarts", PC87312State, uarts, true),
 };
 
 static void pc87312_class_init(ObjectClass *klass, const void *data)
