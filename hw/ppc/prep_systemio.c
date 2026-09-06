@@ -211,6 +211,8 @@ static void prep_port0850_write(void *opaque, uint32_t addr, uint32_t val)
 static const MemoryRegionPortio ppc_io800_port_list[] = {
     { 0x092, 1, 1, .read = prep_port0092_read,
                    .write = prep_port0092_write, },
+    { 0x095, 1, 1, .read = prep_port0092_read,
+                   .write = prep_port0092_write, },
     { 0x808, 1, 1, .write = prep_port0808_write, },
     { 0x80c, 1, 1, .read = prep_port080c_read, },
     { 0x810, 1, 1, .write = prep_port0810_write, },

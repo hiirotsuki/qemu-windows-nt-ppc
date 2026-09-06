@@ -1420,6 +1420,8 @@ struct CPUArchState {
     bool resume_as_sreset;
     bool le_latch_present;
     bool platform_le;
+    bool platform_le_fetch;
+    bool platform_le_governs_fetch;
 
     /*
      * On powernv, quiesced means the CPU has been stopped using PC direct
@@ -1454,7 +1456,7 @@ struct CPUArchState {
      * Specifies bit locations of the Time Base used to signal a fixed timer
      * exception on a transition from 0 to 1 (watchdog or fixed-interval timer)
      *
-     * 0 selects the least significant bit, 63 selects the most significant bit
+     * 0 selects the least 7significant bit, 63 selects the most significant bit
      */
     uint8_t fit_period[4];
     uint8_t wdt_period[4];
@@ -2400,6 +2402,7 @@ void ppc_compat_add_property(Object *obj, const char *name,
 #define E500_L2CSR0_L2LFC   (1 << 10)   /* L2 cache lock flash clear */
 
 /* HID0 bits */
+#define HID0_6XX_LE_MUNGE   (1 << 3)
 #define HID0_DEEPNAP        (1 << 24)           /* pre-2.06 */
 #define HID0_DOZE           (1 << 23)           /* pre-2.06 */
 #define HID0_NAP            (1 << 22)           /* pre-2.06 */

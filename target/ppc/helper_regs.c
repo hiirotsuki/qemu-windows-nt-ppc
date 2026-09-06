@@ -23,6 +23,7 @@
 #include "exec/cputlb.h"
 #include "system/kvm.h"
 #include "system/tcg.h"
+#include "trace.h"
 #include "helper_regs.h"
 #include "power8-pmu.h"
 #include "cpu-models.h"
@@ -167,6 +168,14 @@ static uint32_t hreg_compute_hflags_value(CPUPPCState *env)
     }
     if (env->le_latch_present && !env->platform_le) {
         hflags |= 1 << HFLAGS_DATA_BE;
+    }
+    if (env->platform_le_governs_fetch) {
+        msr_mask &= ~(1 << MSR_LE);
+        if (env->platform_le) {
+            hflags |= 1 << HFLAGS_LE;
+        }
+    } else if (env->platform_le_fetch) {
+        hflags |= 1 << HFLAGS_LE;
     }
     if ((ppc_flags & POWERPC_FLAG_SPE) && (msr & (1 << MSR_SPE))) {
         hflags |= 1 << HFLAGS_SPE;
@@ -548,11 +557,11 @@ void register_generic_sprs(PowerPCCPU *cpu)
     } else {
         spr_register(env, SPR_WR_TBL, "TBL",
                      SPR_NOACCESS, SPR_NOACCESS,
-                     SPR_NOACCESS, &spr_write_tbl,
+                     &spr_read_tbl, &spr_write_tbl,
                      0x00000000);
         spr_register(env, SPR_WR_TBU, "TBU",
                      SPR_NOACCESS, SPR_NOACCESS,
-                     SPR_NOACCESS, &spr_write_tbu,
+                     &spr_read_tbu, &spr_write_tbu,
                      0x00000000);
     }
 #endif
@@ -822,9 +831,22 @@ void register_usprgh_sprs(CPUPPCState *env)
 
 void ppc_set_platform_le(CPUPPCState *env, bool le)
 {
-    if (!env->le_latch_present || env->platform_le != le) {
+    bool governs = !!(env->spr[SPR_HID0] & HID0_6XX_LE_MUNGE);
+    bool fetch_le = le && governs;
+
+    trace_ppc_platform_le_latch(le, !!(env->spr[SPR_HID0] & HID0_6XX_LE_MUNGE),
+	                            fetch_le, (uint32_t)env->msr,
+                                !!(env->msr & (1ull << MSR_LE)));
+
+    if (!env->le_latch_present || env->platform_le != le) ||
+        env->platform_le_fetch != fetch_le) ||
+        env->platform_le_governs_fetch != governs) {
         env->le_latch_present = true;
         env->platform_le = le;
+        env->platform_le_fetch = fetch_le;
+		env->platform_le_governs_fetch = governs;
         hreg_compute_hflags(env);
+        /* flush instructions, Solaris LE->BE reboot path */
+        cpu_interrupt_exittb(env_cpu(env));
     }
 }
