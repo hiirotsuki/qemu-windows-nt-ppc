@@ -226,3 +226,12 @@ apple_gfx_iosfc_unmap_memory(void *a, void *b, void *c, void *d, void *e, void *
 apple_gfx_iosfc_unmap_memory_region(void* mem, void *region) "unmapping @ %p from memory region %p"
 apple_gfx_iosfc_raise_irq(uint32_t vector) "vector=0x%x"
 
+
+# p9100.c
+p9100_reg_read(unsigned reg, uint64_t val, unsigned size) "reg:0x%03x val:0x%08"PRIx64" size:%u"
+p9100_reg_write(unsigned reg, uint64_t val, unsigned size) "reg:0x%03x val:0x%08"PRIx64" size:%u"
+p9100_dac_read(unsigned rs, uint8_t val) "rs:%u val:0x%02x"
+p9100_dac_write(unsigned rs, uint8_t val) "rs:%u val:0x%02x"
+p9100_mode(uint32_t width, uint32_t height, uint32_t depth, uint32_t pitch) "%ux%u-%u pitch:%u"
+p9100_quad(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, unsigned op) "(%d,%d) (%d,%d) (%d,%d) (%d,%d) rop:0x%02x"
+p9100_blit(int sx, int sy, int dx, int dy, int w, int h, unsigned op) "src:(%d,%d) dst:(%d,%d) %dx%d rop:0x%02x"
