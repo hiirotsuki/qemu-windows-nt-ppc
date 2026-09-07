@@ -838,8 +838,8 @@ void ppc_set_platform_le(CPUPPCState *env, bool le)
 	                            fetch_le, (uint32_t)env->msr,
                                 !!(env->msr & (1ull << MSR_LE)));
 
-    if (!env->le_latch_present || env->platform_le != le) ||
-        env->platform_le_fetch != fetch_le) ||
+    if (!env->le_latch_present || env->platform_le != le ||
+        env->platform_le_fetch != fetch_le ||
         env->platform_le_governs_fetch != governs) {
         env->le_latch_present = true;
         env->platform_le = le;
