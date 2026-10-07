@@ -328,10 +328,29 @@ int vga_ioport_invalid(VGACommonState *s, uint32_t addr)
     }
 }
 
+static uint32_t vga_ioport_alias(VGACommonState *s, uint32_t addr)
+{
+    if (!s->partial_init) {
+        return addr;
+    }
+    switch (addr) {
+    case VGA_CRT_IM:
+        return VGA_CRT_IC;
+    case VGA_CRT_DM:
+        return VGA_CRT_DC;
+    case VGA_IS1_RM:
+        return VGA_IS1_RC;
+    default:
+        return addr;
+    }
+}
+
 uint32_t vga_ioport_read(void *opaque, uint32_t addr)
 {
     VGACommonState *s = opaque;
     int val, index;
+
+    addr = vga_ioport_alias(s, addr);
 
     if (vga_ioport_invalid(s, addr)) {
         val = 0xff;
@@ -422,6 +441,8 @@ void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 {
     VGACommonState *s = opaque;
     int index;
+
+    addr = vga_ioport_alias(s, addr);
 
     /* check port range access depending on color/monochrome mode */
     if (vga_ioport_invalid(s, addr)) {
@@ -1521,6 +1542,10 @@ static void vga_draw_graphic(VGACommonState *s, int full_update)
 
     /* bits 5-6: 0 = 16-color mode, 1 = 4-color mode, 2 = 256-color mode.  */
     shift_control = (s->gr[VGA_GFX_MODE] >> 5) & 3;
+    if (s->native_mode && s->native_mode(s)) {
+        /* Packed pixels at get_bpp() depth whatever GR05 says. */
+        shift_control = 2;
+    }
     double_scan = (s->cr[VGA_CRTC_MAX_SCAN] >> 7);
     if (s->cr[VGA_CRTC_MODE] & 1) {
         multi_scan = (((s->cr[VGA_CRTC_MAX_SCAN] & 0x1f) + 1) << double_scan)
