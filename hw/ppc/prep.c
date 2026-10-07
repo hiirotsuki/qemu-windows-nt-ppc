@@ -63,7 +63,8 @@
 #define BIOS_SIZE         (1 * MiB)
 #define NVRAM_SIZE        0x2000
 
-#define PREP_VGA_FB_BASE  0x04000000
+/* OS/2 S3 PMI has this hardcoded */
+#define PREP_VGA_FB_BASE  0x02800000
 
 /* Two ports physically on the machine */
 #define PREP_SERIAL_PORTS 2
@@ -359,7 +360,8 @@ static void ibm_40p_init(MachineState *machine)
     /* RTC */
     isa_dev = isa_new(TYPE_MC146818_RTC);
     dev = DEVICE(isa_dev);
-    qdev_prop_set_int32(dev, "base_year", 1900);
+    qdev_prop_set_int32(dev, "base_year", 2000);
+    object_property_set_bool(OBJECT(dev), "century-byte", false, &error_abort);
     isa_realize_and_unref(isa_dev, isa_bus, &error_fatal);
 
     /* initialize CMOS checksums */

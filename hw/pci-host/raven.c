@@ -35,6 +35,7 @@
 #include "hw/core/irq.h"
 #include "hw/core/or-irq.h"
 #include "qom/object.h"
+#include "trace.h"
 
 #define TYPE_RAVEN_PCI_DEVICE "raven"
 #define TYPE_RAVEN_PCI_HOST_BRIDGE "raven-pcihost"
@@ -73,14 +74,17 @@ static void raven_mmcfg_write(void *opaque, hwaddr addr, uint64_t val,
 {
     PCIBus *hbus = opaque;
 
+    trace_raven_mmcfg_write(addr, raven_idsel_to_addr(addr), size, val);
     pci_data_write(hbus, raven_idsel_to_addr(addr), val, size);
 }
 
 static uint64_t raven_mmcfg_read(void *opaque, hwaddr addr, unsigned int size)
 {
     PCIBus *hbus = opaque;
+    uint64_t val = pci_data_read(hbus, raven_idsel_to_addr(addr), size);
 
-    return pci_data_read(hbus, raven_idsel_to_addr(addr), size);
+    trace_raven_mmcfg_read(addr, raven_idsel_to_addr(addr), size, val);
+    return val;
 }
 
 static const MemoryRegionOps raven_mmcfg_ops = {

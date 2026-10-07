@@ -1422,6 +1422,8 @@ struct CPUArchState {
     bool platform_le;
     bool platform_le_fetch;
     bool platform_le_governs_fetch;
+    int fetch_shadow;
+    bool fetch_shadow_le;
 
     /*
      * On powernv, quiesced means the CPU has been stopped using PC direct
@@ -1677,6 +1679,8 @@ void ppc_store_dawrx1(CPUPPCState *env, uint32_t value);
 #endif /* !defined(CONFIG_USER_ONLY) */
 void ppc_store_msr(CPUPPCState *env, target_ulong value);
 void ppc_set_platform_le(CPUPPCState *env, bool le);
+#define PPC_FETCH_SHADOW 6
+void ppc_fetch_order_switched(CPUPPCState *env, bool old_le);
 
 /* Time-base and decrementer management */
 uint64_t cpu_ppc_load_tbl(CPUPPCState *env);
